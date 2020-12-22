@@ -47,7 +47,53 @@ $key = 'a';
 
 print_r(mySortForKey($arr, $key));
 
-$arr = [['a'=>2,'b'=>1], ['b'=>3], ['a'=>7,'b'=>2]];
-$key = 'a';
+// $arr = [['a'=>2,'b'=>1], ['b'=>3], ['a'=>7,'b'=>2]];
+// $key = 'a';
 
-print_r(mySortForKey($arr, $key));
+// print_r(mySortForKey($arr, $key));
+
+echo "<br>";
+
+
+$fileData = file_get_contents('1.xml');
+$xml = simplexml_load_string($fileData);
+
+foreach ($xml->xpath("//Товар") as $segment) {
+  // $row = $segment->currency->attributes();
+  echo "<pre>";
+	print_r($segment->attributes());
+}
+
+
+// foreach ($xml->xpath("//Товар/Цена") as $segment) {
+//   // $row = $segment->currency->attributes();
+//   echo "<pre>";
+// 	print_r($segment);
+// }
+
+// foreach ($xml->{'Товар'} as $key =>  $value) {
+// 	// echo "<pre>";
+// 	// print_r($value);
+// 	// print_r($value->attributes());
+
+// 	foreach ($value->{'Цена'} as $key1 => $val) {
+// 		echo "<pre>";
+// 		// print_r($key1);
+// 		// print_r($val->attributes());
+// 		print_r($val);
+// 	}
+// }
+
+
+
+// $host = '127.0.0.1';
+// $mysqli = new mysqli($host, 'root', 'root', 'test_samson', 3306);
+// if(mysqli_connect_errno()){
+// 	echo "No connect" . mysqli_connect_errno();
+// }
+
+// $xml = simplexml_load_file('1.xml');
+// $json = json_encode($xml);
+// $data = json_decode($json,TRUE);
+// echo "<pre>";
+// var_dump($xml);
