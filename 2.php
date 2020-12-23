@@ -53,47 +53,85 @@ print_r(mySortForKey($arr, $key));
 // print_r(mySortForKey($arr, $key));
 
 echo "<br>";
-
-
-$fileData = file_get_contents('1.xml');
-$xml = simplexml_load_string($fileData);
-
-foreach ($xml->xpath("//Товар") as $segment) {
-  // $row = $segment->currency->attributes();
-  echo "<pre>";
-	print_r($segment->attributes());
-}
-
-
-// foreach ($xml->xpath("//Товар/Цена") as $segment) {
-//   // $row = $segment->currency->attributes();
-//   echo "<pre>";
-// 	print_r($segment);
-// }
-
-// foreach ($xml->{'Товар'} as $key =>  $value) {
-// 	// echo "<pre>";
-// 	// print_r($value);
-// 	// print_r($value->attributes());
-
-// 	foreach ($value->{'Цена'} as $key1 => $val) {
-// 		echo "<pre>";
-// 		// print_r($key1);
-// 		// print_r($val->attributes());
-// 		print_r($val);
-// 	}
-// }
-
-
-
 // $host = '127.0.0.1';
-// $mysqli = new mysqli($host, 'root', 'root', 'test_samson', 3306);
+// $mysqli = new mysqli($host, 'root', 'root', 'test_samson', 3306, 'utf8');
 // if(mysqli_connect_errno()){
 // 	echo "No connect" . mysqli_connect_errno();
 // }
 
-// $xml = simplexml_load_file('1.xml');
-// $json = json_encode($xml);
-// $data = json_decode($json,TRUE);
-// echo "<pre>";
-// var_dump($xml);
+try {
+  $host = '127.0.0.1';
+  $db = 'test_samson';
+  $user = 'root';
+  $pass = 'root';
+  $charset = 'utf8';
+
+  $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+  $opt = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+  ];
+  $pdo = new PDO($dsn, $user, $pass, $opt);
+  // $dbs = $pdo->query('SELECT * FROM a_product')->fetchAll();
+  // echo "<pre>" . print_r($dbs, true) . "</pre>";
+} catch (\Exception $e) {
+  echo $e->getMessage();
+}
+
+
+
+function importXml($a){
+	global $pdo;
+	$fileData = file_get_contents($a);
+	$xml = simplexml_load_string($fileData);
+
+
+	foreach ($xml->xpath("//Товар") as $segment) {
+	  $row = $segment->attributes();
+	  // echo "<pre>";
+	  // print_r($segment);
+
+	  $code = $row{'Код'};
+	  $title = $row{'Название'};
+	  $product = $pdo->query("INSERT INTO a_product (product_code, product_title) VALUES ($code, '$title');");
+	  if(!$product){
+	  	echo $mysqli->error;
+	  }
+	  $productId = $pdo->lastInsertId();
+
+	  foreach ($segment->{'Цена'} as $value) {
+	  	$priceTitle = $value->attributes();
+	  	$price = $value;
+			$prices = $pdo->query("INSERT INTO a_price (product_id, price_title, price) VALUES ($productId, '$priceTitle', $price);");
+			if(!$prices){
+		  	echo $mysqli->error;
+		  }
+	  }
+
+	  foreach ($segment->{'Свойства'} as $descript) {
+	  	// echo "<pre>";
+	  	// print_r($descript);
+	  	foreach ($descript as $key => $val) {
+	  		echo "<pre>";
+	  		// print($key);
+	  		// print($val);
+	  		$properties = $pdo->query("INSERT INTO a_property (product_id, property_title, property_value) VALUES ($productId, '$key', '$val');");
+				if(!$properties){
+		  		echo $mysqli->error;
+		  	}
+	  	}
+	  }
+	  foreach ($segment->{'Разделы'}->{'Раздел'} as $value) {
+			echo "<pre>";
+			print($value);
+			$text = $pdo->query("SELECT category_id FROM a_category WHERE '$value' = category_title ")->fetchAll();
+		
+			print_r($text[0]{'category_id'});
+			$categoryId = $text[0]{'category_id'};
+			$pdo->query("INSERT INTO a_product_category (product_id, category_id) VALUES ($productId, $categoryId);");
+		}
+	}
+}
+
+importXml('1.xml');
