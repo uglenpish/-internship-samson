@@ -81,7 +81,8 @@ try {
 
 
 
-function importXml($a){
+function importXml($a)
+{
 	global $pdo;
 	$fileData = file_get_contents($a);
 	$xml = simplexml_load_string($fileData);
@@ -134,4 +135,77 @@ function importXml($a){
 	}
 }
 
-importXml('1.xml');
+// importXml('1.xml');
+
+
+function exportXml($a, $b)
+{
+	global $pdo;
+	//создаем xml
+	$dom = new domDocument("1.0", "utf-8"); // Создаём XML-документ версии 1.0 с кодировкой utf-8
+	$root = $dom->createElement("Товары"); // Создаём корневой элемент
+	$dom->appendChild($root);
+	
+	//получаем товары по id категории
+	$q = $pdo->query("SELECT * FROM a_product, a_product_category WHERE a_product_category.category_id = $b AND a_product.product_id = a_product_category.product_id")->fetchAll();
+	// echo "<pre>";
+	// print_r($q);
+
+	foreach ($q as $value) {
+		// echo "<pre>";
+		// print_r($value);
+		$product = $dom->createElement("Товар");
+		$root->appendChild($product);
+		//добавляем атрибуты
+		$productCode = $dom->createAttribute('Код');
+		$productCode->value = $value["product_code"];
+		$productTitle = $dom->createAttribute('Название');
+		$productTitle->value = $value["product_title"];
+		$product->appendChild($productCode);
+		$product->appendChild($productTitle);
+
+		//получаем цену
+		$prices = $pdo->query("SELECT price_title, price FROM a_price WHERE product_id = $value[product_id] ")->fetchAll();
+		foreach ($prices as $val) {
+
+			$price = $dom->createElement("Цена", $val['price']);
+			$priceTitle = $dom->createAttribute('Тип');
+			$priceTitle->value = $val['price_title'];
+			$price->appendChild($priceTitle); 
+			$product->appendChild($price);
+		}
+		
+		//получаем характеристики
+
+		$prop = $pdo->query("SELECT property_title, property_value FROM a_property WHERE product_id = $value[product_id] ")->fetchAll();
+
+		$property = $dom->createElement('Свойства');
+		$product->appendChild($property);
+		foreach ($prop as $value) {
+			$propertyTitle = $dom->createElement($value['property_title'], $value['property_value']);
+			$property->appendChild($propertyTitle);
+		}
+
+		//добавляем категорию
+
+		$categorArr = $pdo->query("SELECT category_title FROM a_category WHERE category_id = $b ")->fetchAll();
+		
+		$categories = $dom->createElement('Разделы');
+		$product->appendChild($categories);
+
+		foreach ($categorArr as $value) {
+			echo "<pre>";
+			print_r($value);
+			$category = $dom->createElement('Раздел', $value['category_title']);
+			$categories->appendChild($category);
+		}
+	}
+
+	// $xml = $dom->saveXML();
+	// $handle = fopen("2.xml", "w");
+	// fwrite($handle, $xml);
+	// fclose($handle);
+	$dom->save("/var/www/sport/test_samson/$a");
+}
+
+exportXml('2.xml', 2);
